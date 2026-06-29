@@ -77,18 +77,63 @@ python -m q2t migrate --qvf path/to/App.qvf --host $TS_HOST
 ## Project layout
 
 ```
-q2t/
-  ir.py              normalized intermediate representation (the contract)
-  extract/
-    qvf_offline.py   best-effort offline .qvf scanner
-    qlik_engine.py   Qlik Engine JSON-RPC extractor (recommended)
-  transform/
-    to_tml.py        IR -> TML (table / worksheet / liveboard)
-    report.py        mapping report (what mapped, what needs manual work)
+q2t/                        the migration package (installable, importable)
+  cli.py                    orchestrator: extract / transform / load / migrate / formulas
+  ir.py                     normalized intermediate representation (the contract between stages)
+  extract/                  Qlik -> IR
+    __init__.py             dispatcher: try SQLite first, fall back to byte-scan
+    qvf_sqlite.py           reads a .qvf as a SQLite DB (clean, if applicable)
+    qvf_offline.py          best-effort byte-scan of a raw .qvf (fragments only)
+    qlik_engine.py          Qlik Engine JSON-RPC extractor (reliable; needs a running engine)
+  transform/                IR -> TML + reports
+    to_tml.py               IR -> TML (table / model / liveboard)
+    expr.py                 Qlik expression -> ThoughtSpot formula translator
+    formula_map.py          formula-mapping sub-utility: lookup / classify / audit
+    report.py               element-level migration report (provenance + review checklist)
   load/
-    ts_client.py     ThoughtSpot REST v2 client (login, connection, TML import)
-  cli.py             orchestrator (extract / transform / load / migrate)
+    ts_client.py            ThoughtSpot REST v2 client (login, create connection, TML import/validate)
+  data/                     packaged reference data
+    qlik_ts_formula_map.csv / .json   the 199-row Qlik->TS formula map (corrected)
+build_live.py               builder for a specific live migration's TML (worked example)
+build_formula_map.py        regenerates q2t/data/ from the source CSV (applies corrections)
+fixtures/                   synthetic .qvf files for testing the extractors
+README.md / requirements.txt / .gitignore
 ```
+
+## What each part does
+
+**`q2t/` — the package.** The whole migration tool, run as `python -m q2t <command>`.
+It moves a Qlik app through four stages around a shared IR:
+- **extract** — turn a `.qvf` (or a live Qlik engine) into the normalized `ir.py`
+  representation. Three modes: `qlik_engine` (reliable, needs an engine), `qvf_sqlite`
+  (clean if the file is a SQLite DB), `qvf_offline` (best-effort byte-scan fallback).
+- **transform** — `to_tml.py` turns the IR into ThoughtSpot TML (tables, model,
+  liveboard); `expr.py` translates Qlik formulas; `report.py` writes the migration report.
+- **load** — `ts_client.py` logs in, creates the connection, and imports/validates the TML.
+- **formula_map** — the formula reference + coverage audit (see below).
+
+**`q2t/data/` — the corrected 199-row formula mapping (CSV + JSON).** The canonical
+Qlik→ThoughtSpot formula reference, every row tagged `ok` / `corrected` / `verify`.
+Consumed by `formula_map.py` for `q2t formulas --lookup <fn>` (find a function's
+equivalent) and `--audit` (report how much of an app's formula surface converts
+cleanly vs. needs manual work). The CSV is human-editable; the JSON is what the code loads.
+
+**`build_live.py`, `build_formula_map.py` — the builders.**
+- `build_formula_map.py` regenerates `q2t/data/` from the source CSV, applying the
+  verified corrections (`date_diff→diff_days`, `add_years`, `sql_*_op`) and the
+  status tags. Re-run it whenever the source mapping changes.
+- `build_live.py` is a worked example: it hand-builds the exact table/model/liveboard
+  TML for a real migrated dashboard against a known star schema — useful as a
+  reference for the precise TML shape the cluster accepts.
+
+**`fixtures/` — synthetic test `.qvf`s.** Small, hand-made `.qvf` files
+(`RetailDemo.qvf`, `SqliteApp.qvf`) used to exercise the extractors without needing
+a real Qlik app — one mimics the SQLite layout, one is opaque binary for the
+byte-scan path.
+
+**`README.md` / `requirements.txt` / `.gitignore`.** Docs; Python dependencies
+(`requests`, `PyYAML`, optional `websocket-client` for engine mode); and the ignore
+rules that keep secrets, the venv, and build output out of git.
 
 ## Status & limitations
 
