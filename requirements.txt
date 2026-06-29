@@ -1,0 +1,4 @@
+requests>=2.31
+PyYAML>=6.0
+# Optional, only needed for --mode engine (Qlik Engine JSON-RPC over WebSocket)
+websocket-client>=1.6

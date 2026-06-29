@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Build artifacts / generated output
+build/
+
+# Secrets & credentials — never commit
+*.pem
+*.p8
+*.key
+*_cookies.txt
+.env
+
+# OS
+.DS_Store
