@@ -53,6 +53,10 @@ The Qlik data model gives field names; ThoughtSpot needs the **physical
 warehouse tables**. Use the pulled data connections + load script to identify
 them, or introspect the target warehouse to confirm exact tables/columns.
 
+**Introspect column types — do not guess them** (TML import rejects type
+mismatches). Use `q2t.transform.wh_types.fetch_snowflake_types` to build a
+`{table:{column:ts_type}}` map and pass it to `transform --types <map.json>`.
+
 ## Step 4 — Transform → validate → import
 
 ```bash

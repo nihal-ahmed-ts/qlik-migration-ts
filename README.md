@@ -64,7 +64,10 @@ python -m q2t extract --app-id <guid> --engine wss://qlik-host:4747/app/ \
     --out build/app.ir.json --mode engine       # direct engine ws URL
 
 # 2. Transform IR -> TML + mapping report
-python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
+#    (optional --types: a {table:{column:ts_type}} map from wh_types.fetch_snowflake_types,
+#     so column data types come from the warehouse instead of being guessed)
+python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md \
+    [--types build/types.json]
 
 # 3. Load TML into ThoughtSpot (review the report first!)
 export TS_HOST=https://your-instance.thoughtspot.cloud

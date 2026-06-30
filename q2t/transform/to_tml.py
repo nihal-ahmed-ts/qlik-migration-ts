@@ -57,7 +57,8 @@ class TransformResult:
         self.notes.append((severity, area, msg))
 
 
-def transform(app: QlikApp, *, model_kind: str = "model") -> TransformResult:
+def transform(app: QlikApp, *, model_kind: str = "model",
+              type_overrides: dict | None = None) -> TransformResult:
     res = TransformResult()
     # Carry forward extraction notes so the report is the single place to look.
     for n in app.notes:
@@ -65,7 +66,7 @@ def transform(app: QlikApp, *, model_kind: str = "model") -> TransformResult:
 
     table_names: list[str] = []
     for tbl in app.tables:
-        doc = _table_tml(tbl, app, res)
+        doc = _table_tml(tbl, app, res, type_overrides)
         res.documents[f"table.{_slug(tbl.name)}.tml"] = _dump(doc)
         table_names.append(tbl.name)
 
@@ -88,19 +89,24 @@ def transform(app: QlikApp, *, model_kind: str = "model") -> TransformResult:
 
 # -- tables ----------------------------------------------------------------
 
-def _table_tml(tbl: Table, app: QlikApp, res: TransformResult) -> dict[str, Any]:
+def _table_tml(tbl: Table, app: QlikApp, res: TransformResult,
+               type_overrides: dict | None = None) -> dict[str, Any]:
+    from . import wh_types
     conn_name = tbl.source_connection or (app.connections[0].name if app.connections else None)
     if not conn_name:
         res.note("manual", "table",
                  f"Table '{tbl.name}' has no source connection; set "
                  f"connection.name in the TML before import.")
+    db_table = tbl.name
     columns = []
     for col in tbl.columns:
+        # Prefer the real warehouse type (introspected) over inferring from Qlik.
+        ts_type = wh_types.lookup(type_overrides, db_table, col.name) or _map_type(col.data_type)
         columns.append({
             "name": col.name,
             "db_column_name": col.name,
             "properties": {"column_type": "ATTRIBUTE"},
-            "db_column_properties": {"data_type": _map_type(col.data_type)},
+            "db_column_properties": {"data_type": ts_type},
         })
     if not columns:
         res.note("warning", "table", f"Table '{tbl.name}' has no columns recovered.")

@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -79,7 +80,12 @@ def _print_extract_summary(app: QlikApp) -> None:
 
 def cmd_transform(args: argparse.Namespace) -> int:
     app = QlikApp.load(args.ir)
-    result = transform(app, model_kind=args.model_kind)
+    type_overrides = None
+    if getattr(args, "types", None):
+        with open(args.types, encoding="utf-8") as fh:
+            type_overrides = json.load(fh)
+        print(f"  using warehouse type map: {args.types}")
+    result = transform(app, model_kind=args.model_kind, type_overrides=type_overrides)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -247,6 +253,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--ir", required=True)
     sp.add_argument("--out", required=True)
     sp.add_argument("--report", default="report.md")
+    sp.add_argument("--types", help="JSON {table:{column:ts_type}} of warehouse types "
+                    "(from wh_types.fetch_snowflake_types) to avoid type guessing")
     sp.set_defaults(func=cmd_transform)
 
     sp = sub.add_parser("load"); add_load_opts(sp)

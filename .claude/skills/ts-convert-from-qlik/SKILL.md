@@ -51,6 +51,12 @@ Introspect the **target warehouse** for exact tables/columns (the reliable
 source for the model), or use the provided data model. Identify the
 fact/dimension tables and the join keys.
 
+**Introspect column types — do not guess them.** TML import fails with
+`DataType ... does not match CDW DataType` if a column type is wrong (e.g.
+DOUBLE for an integer column). Use `q2t.transform.wh_types.fetch_snowflake_types`
+to build a `{table:{column:ts_type}}` map (NUMBER scale 0 → INT64, scale > 0 →
+DOUBLE, etc.), save it as JSON, and pass it to `transform --types <map.json>`.
+
 ## Step 4 — Read the dashboard from the PDF (inferred)
 
 From the PDF/screenshots, enumerate each viz: title, chart type, the
