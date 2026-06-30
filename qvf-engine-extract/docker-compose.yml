@@ -1,0 +1,13 @@
+services:
+  qix-engine:
+    image: qlikcore/engine:12.1126.0
+    # Qlik Core engine images are linux/amd64 only; run via emulation on arm64 (Apple Silicon).
+    platform: linux/amd64
+    # Accept the Qlik Core EULA (required). Read the license terms before use.
+    command: -S AcceptEULA=yes
+    ports:
+      - "9076:9076"
+    volumes:
+      # Drop your .qvf files here; they become visible to the engine under /apps
+      - ./apps:/apps
+    restart: unless-stopped

@@ -55,12 +55,13 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-# 1. Extract a .qvf to IR JSON (offline best-effort)
-python -m q2t extract --qvf path/to/App.qvf --out build/app.ir.json --mode offline
-
-#    ...or via a running Qlik engine (recommended)
+# 1. Extract a .qvf to IR JSON. Pick an extraction mode:
+python -m q2t extract --qvf path/to/App.qvf --out build/app.ir.json --mode offline      # best-effort (no engine)
+python -m q2t extract --artifacts output/   --out build/app.ir.json --mode engine-artifacts  # JSON from a Qlik engine
+python -m q2t extract --tenant https://t.us.qlikcloud.com --app-id <guid> \
+    --out build/app.ir.json --mode qlik-cloud   # Qlik Cloud API (foolproof; needs API key)
 python -m q2t extract --app-id <guid> --engine wss://qlik-host:4747/app/ \
-    --out build/app.ir.json --mode engine
+    --out build/app.ir.json --mode engine       # direct engine ws URL
 
 # 2. Transform IR -> TML + mapping report
 python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
@@ -73,6 +74,18 @@ python -m q2t load --tml build/tml/ --host $TS_HOST
 # Or run all three at once
 python -m q2t migrate --qvf path/to/App.qvf --host $TS_HOST
 ```
+
+## Claude Code skills
+
+Two guided skills wrap the CLI (in `.claude/skills/`). Invoke inside Claude Code
+with `/<name>` or by describing the task; each asks for the inputs it needs.
+
+| Skill | Path | When to use |
+|-------|------|-------------|
+| `ts-convert-from-qlik` | no-API / manual | You have a `.qvf` + dashboard PDF + data model, but no Qlik API. Data model is faithful; dashboard is inferred and flagged. |
+| `ts-convert-from-qlik-api` | Qlik Cloud API | You have a Qlik Cloud tenant + API key. Foolproof, low-guesswork (SOURCE provenance). |
+
+Both call the same `q2t` core — only the extraction front-end differs.
 
 ## Project layout
 

@@ -15,5 +15,8 @@ build/
 *_cookies.txt
 .env
 
+# Claude Code local settings (keep .claude/skills/, drop local settings)
+.claude/settings.local.json
+
 # OS
 .DS_Store

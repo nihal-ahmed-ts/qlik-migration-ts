@@ -27,6 +27,20 @@ def cmd_extract(args: argparse.Namespace) -> int:
             return 2
         from .extract import extract_offline
         app = extract_offline(args.qvf)
+    elif args.mode == "engine-artifacts":
+        if not args.artifacts:
+            print("error: --artifacts <dir> is required for engine-artifacts mode",
+                  file=sys.stderr)
+            return 2
+        from .extract import engine_artifacts
+        app = engine_artifacts.extract(args.artifacts)
+    elif args.mode == "qlik-cloud":
+        if not (args.tenant and args.app_id):
+            print("error: --tenant and --app-id are required for qlik-cloud mode",
+                  file=sys.stderr)
+            return 2
+        from .extract import qlik_cloud
+        app = qlik_cloud.extract(args.tenant, args.app_id, args.api_key)
     else:
         if not (args.engine and args.app_id):
             print("error: --engine and --app-id are required for engine mode", file=sys.stderr)
@@ -199,8 +213,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     def add_extract_opts(sp):
         sp.add_argument("--qvf", help="path to .qvf (offline mode)")
-        sp.add_argument("--mode", choices=["offline", "engine"], default="offline")
+        sp.add_argument("--mode", choices=["offline", "engine", "engine-artifacts", "qlik-cloud"],
+                        default="offline")
+        sp.add_argument("--artifacts", help="output/ dir from qvf-engine-extract (engine-artifacts mode)")
         sp.add_argument("--engine", help="Qlik engine ws(s):// URL (engine mode)")
+        sp.add_argument("--tenant", help="Qlik Cloud tenant URL (qlik-cloud mode)")
+        sp.add_argument("--api-key", default=os.environ.get("QLIK_API_KEY"),
+                        help="Qlik Cloud API key (qlik-cloud mode; or QLIK_API_KEY)")
         sp.add_argument("--app-id", help="Qlik app GUID (engine mode)")
         sp.add_argument("--header", action="append", help="extra ws header k=v (repeatable)")
         sp.add_argument("--probe", action="store_true",

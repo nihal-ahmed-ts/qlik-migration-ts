@@ -1,0 +1,13 @@
+{
+  "name": "qvf-extractor",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Extract load script, data model, and object metadata from QVF files via a headless Qlik engine",
+  "scripts": {
+    "extract": "node src/extract.js"
+  },
+  "dependencies": {
+    "enigma.js": "^2.14.0",
+    "ws": "^8.18.0"
+  }
+}
