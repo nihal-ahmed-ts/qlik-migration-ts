@@ -1,5 +1,5 @@
 ---
-name: ts-convert-from-qlik-api
+name: qlik-to-thoughtspot-api
 description: >-
   Migrate a Qlik Sense app to ThoughtSpot using the QLIK CLOUD API — the
   foolproof, low-guesswork path. Use when the user HAS Qlik Cloud access: a
@@ -79,6 +79,6 @@ formulas, unsupported chart types), not inference.
 ## Prerequisites & notes
 
 - Requires Qlik Cloud API access; **trial tenants often cannot generate API
-  keys** (no Developer role) — if so, fall back to `ts-convert-from-qlik`.
+  keys** (no Developer role) — if so, fall back to `qlik-to-thoughtspot`.
 - `pip install -r requirements.txt` (needs `websocket-client` for the Engine API).
 - Never commit the API key or ThoughtSpot credentials.

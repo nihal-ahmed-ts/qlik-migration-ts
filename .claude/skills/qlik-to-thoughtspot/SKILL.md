@@ -1,5 +1,5 @@
 ---
-name: ts-convert-from-qlik
+name: qlik-to-thoughtspot
 description: >-
   Migrate a Qlik Sense dashboard to ThoughtSpot WITHOUT Qlik API access — the
   manual / no-API path. Use when the user has a .qvf file plus a dashboard
@@ -16,7 +16,7 @@ description: >-
 This is the **fallback path** for when there's no Qlik API/engine access. It is
 faithful for the **data model** (read from the warehouse) but the **dashboard
 layer is inferred** from the PDF — so every inferred item is flagged, never
-silently guessed. For the foolproof path, use `ts-convert-from-qlik-api`.
+silently guessed. For the foolproof path, use `qlik-to-thoughtspot-api`.
 
 The engine is the `q2t` CLI in this repo. Run it from the repo root with the
 project venv active (`source .venv/bin/activate`).

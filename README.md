@@ -85,8 +85,8 @@ with `/<name>` or by describing the task; each asks for the inputs it needs.
 
 | Skill | Path | When to use |
 |-------|------|-------------|
-| `ts-convert-from-qlik` | no-API / manual | You have a `.qvf` + dashboard PDF + data model, but no Qlik API. Data model is faithful; dashboard is inferred and flagged. |
-| `ts-convert-from-qlik-api` | Qlik Cloud API | You have a Qlik Cloud tenant + API key. Foolproof, low-guesswork (SOURCE provenance). |
+| `qlik-to-thoughtspot` | no-API / manual | You have a `.qvf` + dashboard PDF + data model, but no Qlik API. Data model is faithful; dashboard is inferred and flagged. |
+| `qlik-to-thoughtspot-api` | Qlik Cloud API | You have a Qlik Cloud tenant + API key. Foolproof, low-guesswork (SOURCE provenance). |
 
 Both call the same `q2t` core — only the extraction front-end differs.
 
