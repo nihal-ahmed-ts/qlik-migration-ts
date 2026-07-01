@@ -53,7 +53,7 @@ def build(tml_dir: str, *, provenance: str = "INFERRED",
     tables: list[dict] = []
     model: Optional[dict] = None
     joins = 0
-    formulas: list[dict] = []
+    measures: list[dict] = []   # every measure: formula-based AND aggregation-based
     geo_columns: list[str] = []
     liveboards: list[dict] = []
 
@@ -68,14 +68,29 @@ def build(tml_dir: str, *, provenance: str = "INFERRED",
             model = {"name": m.get("name"), "tables": len(m.get("model_tables") or m.get("tables") or [])}
             for mt in (m.get("model_tables") or []):
                 joins += len(mt.get("joins", []) or [])
-            for f in (m.get("formulas") or []):
-                formulas.append({"name": f.get("name"), "expr": f.get("expr", "")})
+            # A measure is any column that computes/aggregates a value: either a
+            # formula (formula_id) or an aggregation column (column_type MEASURE).
+            # ALL of them are Qlik expressions worth confirming.
+            formula_expr = {f.get("id"): f.get("expr", "") for f in (m.get("formulas") or [])}
+            surfaced_formula_ids = set()
             for c in (m.get("columns") or []):
-                if (c.get("properties") or {}).get("geo_config"):
+                props = c.get("properties") or {}
+                if props.get("geo_config"):
                     geo_columns.append(c.get("name"))
-            model["measures"] = sum(1 for c in (m.get("columns") or [])
-                                    if (c.get("properties") or {}).get("column_type") == "MEASURE"
-                                    or c.get("formula_id"))
+                if c.get("formula_id"):
+                    surfaced_formula_ids.add(c["formula_id"])
+                    measures.append({"name": c.get("name"), "kind": "formula",
+                                     "definition": formula_expr.get(c["formula_id"], "(formula)")})
+                elif props.get("column_type") == "MEASURE":
+                    agg = (props.get("aggregation") or "").lower()
+                    cid = c.get("column_id", "")
+                    measures.append({"name": c.get("name"), "kind": "aggregation",
+                                     "definition": f"{agg}({cid})" if agg else cid})
+            # formulas defined but not surfaced as a named column
+            for f in (m.get("formulas") or []):
+                if f.get("id") not in surfaced_formula_ids:
+                    measures.append({"name": f.get("name"), "kind": "formula",
+                                     "definition": f.get("expr", "")})
         elif "liveboard" in doc:
             lb = doc["liveboard"]
             vizzes = lb.get("visualizations", []) or []
@@ -101,9 +116,9 @@ def build(tml_dir: str, *, provenance: str = "INFERRED",
         review.append(("review", "joins",
                        f"Verify the {joins} model join(s) — join keys and cardinality "
                        f"({'inferred' if inferred else 'from source'})."))
-    for f in formulas:
-        review.append(("review", "formula",
-                       f"Confirm formula '{f['name']}' matches the Qlik measure:  {f['expr']}"))
+    for meas in measures:
+        review.append(("review", "measure",
+                       f"Confirm measure '{meas['name']}' = {meas['definition']}  — matches the Qlik expression."))
     if geo_columns:
         review.append(("review", "geo",
                        f"Geo/map column(s) {geo_columns} need country/region geo-config — verify the map renders."))
@@ -135,7 +150,7 @@ def build(tml_dir: str, *, provenance: str = "INFERRED",
             "tables": len(tables),
             "columns": sum(t["columns"] for t in tables),
             "joins": joins,
-            "formulas": len(formulas),
+            "measures": len(measures),
             "liveboards": len(liveboards),
             "vizzes": sum(lb["vizzes"] for lb in liveboards),
             "filters": sum(len(lb["filters"]) for lb in liveboards),
@@ -143,7 +158,7 @@ def build(tml_dir: str, *, provenance: str = "INFERRED",
         "connections": sorted(c for c in connections if c),
         "tables": tables,
         "model": model,
-        "formulas": formulas,
+        "measures": measures,
         "liveboards": liveboards,
         "review": [{"severity": s, "area": a, "message": m} for s, a, m in review],
     }
@@ -168,7 +183,7 @@ def _markdown(s: dict[str, Any]) -> str:
           f"| Tables | {c['tables']} |",
           f"| Columns | {c['columns']} |",
           f"| Model joins | {c['joins']} |",
-          f"| Formulas | {c['formulas']} |",
+          f"| Measures (formulas + aggregations) | {c['measures']} |",
           f"| Liveboards | {c['liveboards']} |",
           f"| Visualizations | {c['vizzes']} |",
           f"| Filters | {c['filters']} |",
@@ -183,10 +198,10 @@ def _markdown(s: dict[str, Any]) -> str:
         m = s["model"]
         L += ["### Model", "",
               f"- **{m['name']}** — {m['tables']} tables, {c['joins']} joins, "
-              f"{c['formulas']} formula(s), {m.get('measures',0)} measure(s)", ""]
-    if s["formulas"]:
-        L += ["### Formulas", ""]
-        L += [f"- `{f['name']}` = `{f['expr']}`" for f in s["formulas"]]
+              f"{c['measures']} measure(s)", ""]
+    if s["measures"]:
+        L += ["### Measures (each should be confirmed against its Qlik expression)", ""]
+        L += [f"- `{meas['name']}` = `{meas['definition']}`  _({meas['kind']})_" for meas in s["measures"]]
         L.append("")
     for lb in s["liveboards"]:
         L += [f"### Liveboard — {lb['name']}", "",
