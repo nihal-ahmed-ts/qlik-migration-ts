@@ -69,12 +69,21 @@ Same TML invariants as the manual skill (model joins, `[Table::COLUMN]`
 formulas + `formula_id`, `tiles` layout, render-ready viz `answer` blocks with
 aggregated output column names verified via `searchdata`).
 
-## Step 5 — Verify + report
+## Step 5 — Verify + generate the migration report
 
-Confirm each viz renders and hand over the element report. Because extraction
-was via the API, provenance is **SOURCE** across the board — the report's job
-here is mainly to flag ThoughtSpot-side translation items (untranslatable
-formulas, unsupported chart types), not inference.
+Confirm each viz renders, then **generate the migration report**:
+
+```bash
+python -m q2t report --tml build/tml/ --out build/migration_report.md \
+    --provenance api --app-name "<app>" \
+    --target "<host> / <connection> / <db>.<schema>"
+```
+
+It lists every migrated object (connections, tables, columns, joins, formulas,
+model, liveboard vizzes, filters, maps) + a review checklist. Because extraction
+was via the API, provenance is **SOURCE** — so the checklist focuses on
+ThoughtSpot-side translation items (untranslatable formulas, unsupported chart
+types) and import failures, not inference.
 
 ## Prerequisites & notes
 

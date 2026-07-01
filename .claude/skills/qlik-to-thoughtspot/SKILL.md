@@ -82,11 +82,22 @@ layout uses `tiles`; viz `answer` needs `answer_columns` + `table` +
 `chart.chart_columns`/`axis_configs` with the **aggregated output column names**
 (verify them with a live `searchdata` query before finalizing each viz).
 
-## Step 6 — Verify + report
+## Step 6 — Verify + generate the migration report
 
-Confirm each viz renders (live query / liveboard SQL) and hand the user the
-element-level report — with provenance: **data model = SOURCE, charts =
-INFERRED (verify)** — plus the human-review checklist.
+Confirm each viz renders (live `searchdata` / `liveboard/sql`), then **generate
+the migration report** — the inventory of what was migrated + what needs a human:
+
+```bash
+python -m q2t report --tml build/tml/ --out build/migration_report.md \
+    --provenance manual --app-name "<app>" \
+    --target "<host> / <connection> / <db>.<schema>"
+```
+
+Hand the user `migration_report.md`. It lists **every migrated object**
+(connections, tables, columns, joins, formulas, model, liveboard vizzes by
+type, filters, maps) and a **"Needs confirmation / human intervention"**
+checklist. Provenance here is **data model = SOURCE, charts = INFERRED
+(verify)**; any import failures appear as 🔴 must-fix items.
 
 ## Principles
 

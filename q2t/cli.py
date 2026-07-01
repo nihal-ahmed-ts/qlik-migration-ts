@@ -148,6 +148,29 @@ def _print_import_result(res) -> None:
         print(f"  {res}")
 
 
+# -- report (post-migration inventory + review checklist) ------------------
+
+def cmd_report(args: argparse.Namespace) -> int:
+    from .transform import migration_report
+    prov = {"manual": "INFERRED", "api": "SOURCE", "engine": "SOURCE"}.get(
+        (args.provenance or "").lower(), (args.provenance or "INFERRED").upper())
+    import_status = None
+    if args.import_status:
+        with open(args.import_status, encoding="utf-8") as fh:
+            import_status = json.load(fh)
+    md, js = migration_report.build(args.tml, provenance=prov, app_name=args.app_name,
+                                    target=args.target, import_status=import_status)
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(md, encoding="utf-8")
+    out.with_suffix(".json").write_text(js, encoding="utf-8")
+    print(f"✓ migration report written to {out} (+ .json)")
+    # echo the review section so it's visible in the run
+    n_review = md.count("\n- 🟡") + md.count("\n- 🔴")
+    print(f"  {n_review} item(s) flagged for confirmation / intervention")
+    return 0
+
+
 # -- formulas (mapping reference + audit) ----------------------------------
 
 def cmd_formulas(args: argparse.Namespace) -> int:
@@ -260,6 +283,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("load"); add_load_opts(sp)
     sp.add_argument("--tml", required=True)
     sp.set_defaults(func=cmd_load)
+
+    sp = sub.add_parser("report", help="post-migration report: objects migrated + review checklist")
+    sp.add_argument("--tml", required=True, help="dir of generated TML (table/model/liveboard)")
+    sp.add_argument("--out", default="migration_report.md")
+    sp.add_argument("--provenance", default="INFERRED",
+                    help="manual/INFERRED (PDF) or api/engine/SOURCE")
+    sp.add_argument("--app-name")
+    sp.add_argument("--target", help="e.g. 'ps-internal / QlikMig_CaseStudy_SF / DB.SCHEMA'")
+    sp.add_argument("--import-status", help="optional JSON {object_name: status}")
+    sp.set_defaults(func=cmd_report)
 
     sp = sub.add_parser("formulas", help="Qlik->TS formula mapping reference + coverage audit")
     sp.add_argument("--lookup", help="look up a Qlik function name or substring")

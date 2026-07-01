@@ -74,6 +74,11 @@ export TS_HOST=https://your-instance.thoughtspot.cloud
 export TS_USER=... TS_PASS=...
 python -m q2t load --tml build/tml/ --host $TS_HOST
 
+# 4. Post-migration report: what migrated (connections/tables/joins/formulas/
+#    vizzes/filters/maps) + a "needs human confirmation" checklist
+python -m q2t report --tml build/tml/ --out build/migration_report.md \
+    --provenance manual --target "$TS_HOST / <connection> / <db>.<schema>"
+
 # Or run all three at once
 python -m q2t migrate --qvf path/to/App.qvf --host $TS_HOST
 ```
