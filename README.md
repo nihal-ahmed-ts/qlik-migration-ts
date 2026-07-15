@@ -85,8 +85,8 @@ python -m q2t migrate --qvf path/to/App.qvf --host $TS_HOST
 
 ## Claude Code skills
 
-Two guided skills wrap the CLI (in `.claude/skills/`). Invoke inside Claude Code
-with `/<name>` or by describing the task; each asks for the inputs it needs.
+Two guided skills wrap the CLI. Invoke inside Claude Code with `/<name>` or by
+describing the task; each asks for the inputs it needs.
 
 | Skill | Path | When to use |
 |-------|------|-------------|
@@ -94,6 +94,28 @@ with `/<name>` or by describing the task; each asks for the inputs it needs.
 | `qlik-to-thoughtspot-api` | Qlik Cloud API | You have a Qlik Cloud tenant + API key. Foolproof, low-guesswork (SOURCE provenance). |
 
 Both call the same `q2t` core — only the extraction front-end differs.
+
+### Install as a Claude Code plugin
+
+This repo doubles as a Claude Code **plugin marketplace**. From any Claude Code
+session:
+
+```
+/plugin marketplace add nihal-ahmed-ts/qlik-migration-ts
+/plugin install qlik-to-thoughtspot@qlik-migration-ts
+```
+
+That installs both skills. Invoke them namespaced by the plugin:
+
+```
+/qlik-to-thoughtspot:qlik-to-thoughtspot        # no-API / manual path
+/qlik-to-thoughtspot:qlik-to-thoughtspot-api    # Qlik Cloud API path
+```
+
+The canonical skill sources live in
+`plugins/qlik-to-thoughtspot/skills/` (the single source of truth). To publish an
+edit made to your local `~/.claude/skills/` copies, run `./sync-skills.sh`, then
+commit and push.
 
 ## Project layout
 
@@ -118,6 +140,11 @@ q2t/                        the migration package (installable, importable)
 build_live.py               builder for a specific live migration's TML (worked example)
 build_formula_map.py        regenerates q2t/data/ from the source CSV (applies corrections)
 fixtures/                   synthetic .qvf files for testing the extractors
+.claude-plugin/marketplace.json   marketplace manifest (this repo is an installable marketplace)
+plugins/qlik-to-thoughtspot/      the installable plugin (manifest + both skills)
+  .claude-plugin/plugin.json
+  skills/                         canonical SKILL.md sources (single source of truth)
+sync-skills.sh              copies ~/.claude/skills edits into the plugin before commit
 README.md / requirements.txt / .gitignore
 ```
 
