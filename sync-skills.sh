@@ -9,6 +9,11 @@ DST="plugins/qlik-to-thoughtspot/skills"
 
 for skill in qlik-to-thoughtspot qlik-to-thoughtspot-api; do
   cp "$SRC/$skill/SKILL.md" "$DST/$skill/SKILL.md"
+  # sync bundled references/ (report format + examples) when present
+  if [ -d "$SRC/$skill/references" ]; then
+    mkdir -p "$DST/$skill/references"
+    cp -R "$SRC/$skill/references/." "$DST/$skill/references/"
+  fi
   echo "synced $skill"
 done
 

@@ -84,20 +84,46 @@ layout uses `tiles`; viz `answer` needs `answer_columns` + `table` +
 
 ## Step 6 — Verify + generate the migration report
 
-Confirm each viz renders (live `searchdata` / `liveboard/sql`), then **generate
-the migration report** — the inventory of what was migrated + what needs a human:
+Confirm each viz renders (live `searchdata` / `liveboard/sql`), then **always
+generate the migration report** — this is a required final deliverable of every
+migration, not optional. Write it to `migration_report.md` and hand it to the user.
 
-```bash
-python -m q2t report --tml build/tml/ --out build/migration_report.md \
-    --provenance manual --app-name "<app>" \
-    --target "<host> / <connection> / <db>.<schema>"
-```
+`python -m q2t report ...` can emit a starting inventory, but the deliverable must
+follow the **full report format** below (see the template at
+`references/migration-report-format.md`). Fill every section from the actual
+migration; do not omit sections.
 
-Hand the user `migration_report.md`. It lists **every migrated object**
-(connections, tables, columns, joins, formulas, model, liveboard vizzes by
-type, filters, maps) and a **"Needs confirmation / human intervention"**
-checklist. Provenance here is **data model = SOURCE, charts = INFERRED
-(verify)**; any import failures appear as 🔴 must-fix items.
+**Required sections, in order:**
+
+1. **Title + header** — `# Qlik → ThoughtSpot migration report`, then **Source**,
+   **Generated** (absolute date), **Target** (`host / connection / db.schema`), and
+   **Provenance** (`data model = SOURCE, charts = INFERRED (verify)`).
+2. **Executive summary** — Migration complexity (Low/Medium/High); Automation % |
+   Manual %; Estimated effort; Risk score with a one-line reason.
+3. **Inventory** — Tables | Columns; Relationships | Measures; Sheets | Visuals.
+4. **Modernization** — Dashboards eliminated; merged; Search opportunities; Spotter
+   opportunities; Semantic improvements (bullets).
+5. **Summary by object type** — table: `Object type | In Qlik | Migrated |
+   Approximated | Needs review | Skipped`, one row per object type, counts must add up.
+6. **Data model** — three tables: **Tables** (`Table | Status | Note`),
+   **Relationships → joins** (`Relationship | Status | Note`), **Measures → formulas**
+   (`Measure | Complexity | Qlik expression | ThoughtSpot formula | Confidence |
+   Status | Note`).
+7. **Report / visuals → answers & liveboards** — **Sheet → liveboard**
+   (`Sheet | Visual | ThoughtSpot chart | Status | Note`, one row per visual incl.
+   note tiles & filters) and a **decision** table (`Sheet | Decision | Liveboard |
+   Status`).
+8. **Manual review** — bulleted, every NEEDS REVIEW / Approximated item with what
+   the human must confirm.
+9. **Verification checklist** — checkboxes; tick the ones you verified live (e.g.
+   a known total that matches the source), leave the rest unchecked for the user.
+10. **ThoughtSpot Modernization Scorecard** — table `Category | Score | Recommendation`
+    for Semantic Model, Search Readiness, Spotter Readiness, Liveboards, AI Readiness.
+
+**Status vocabulary (use exactly):** `Migrated` · `Approximated` · `NEEDS REVIEW` ·
+`Skipped`. Never silently drop anything — every source object appears in a table with
+one of these statuses. Provenance stays **data model = SOURCE, charts = INFERRED
+(verify)**; import failures are `NEEDS REVIEW` must-fix rows.
 
 ## Principles
 
