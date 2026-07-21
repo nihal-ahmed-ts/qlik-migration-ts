@@ -1,0 +1,34 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install q2t CLI + test deps
+        run: |
+          pip install pytest
+          pip install -e tools/q2t-cli
+
+      - name: Run validators
+        run: python3 tools/validate/check_all.py --root .
+
+      - name: Run unit tests
+        run: pytest -q tools/q2t-cli/tests
+
+      - name: Run smoke tests (offline — no live credentials)
+        run: |
+          python tools/smoke-tests/smoke_ts_convert_from_qlik.py
+          python tools/smoke-tests/smoke_ts_convert_from_qlik_api.py

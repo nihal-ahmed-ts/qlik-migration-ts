@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+.pytest_cache/
 
 # Build artifacts / generated output
 build/
@@ -15,8 +16,11 @@ build/
 *_cookies.txt
 .env
 
-# Claude Code local settings (skills now live in plugins/; drop local settings)
+# Claude Code local settings
 .claude/settings.local.json
+
+# Smoke-test local config (per-machine hosts/creds)
+tools/smoke-tests/smoke-config.local.json
 
 # OS
 .DS_Store

@@ -31,7 +31,7 @@ This produces no-account extraction **only if you have a licensed engine**.
 Its `output/` folder feeds straight into `q2t`:
 
 ```bash
-python -m q2t extract --mode engine-artifacts --artifacts output/ --out app.ir.json
+q2t extract --mode engine-artifacts --artifacts output/ --out app.ir.json
 ```
 
 ## Prerequisites
@@ -113,8 +113,8 @@ output/
 Then:
 
 ```bash
-python -m q2t extract --mode engine-artifacts --artifacts output/ --out build/app.ir.json
-python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
+q2t extract --mode engine-artifacts --artifacts output/ --out build/app.ir.json
+q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
 ```
 
 ## How it works
