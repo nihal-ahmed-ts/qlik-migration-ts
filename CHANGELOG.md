@@ -16,9 +16,8 @@ Repo-level changes. Dated, newest on top. Per-skill changes live in each skill's
   - each skill gained `references/coverage-matrix.md`, `references/open-items.md`,
     and a `## Changelog`
   - added `tools/validate/` validators, first unit tests under
-    `tools/q2t-cli/tests/`, smoke tests, `scripts/pre-commit.sh`, and a CI
-    workflow (`ci/validate.yml` — move to `.github/workflows/` to activate; see
-    `ci/README.md`)
+    `tools/q2t-cli/tests/`, smoke tests, `scripts/pre-commit.sh`, and CI
+    (`.github/workflows/validate.yml`)
   - removed the plugin-marketplace layout (`.claude-plugin/`, `plugins/`,
     `sync-skills.sh`) in favor of the symlink install model
   - relocated `build_*.py` worked-example rigs to `examples/builders/`
