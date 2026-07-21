@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "q2t"
+version = "0.1.0"
+description = "Qlik Sense → ThoughtSpot migration CLI — extract, transform, load used by the ts-convert-from-qlik skills"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "requests>=2.31",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+# Qlik Engine JSON-RPC over WebSocket (--mode engine).
+engine = [
+    "websocket-client>=1.6",
+]
+# Warehouse type introspection (q2t.transform.wh_types.fetch_snowflake_types).
+snowflake = [
+    "snowflake-connector-python>=3.0",
+    "cryptography>=41.0",
+]
+dev = [
+    "pytest>=7.0",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+q2t = "q2t.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["q2t*"]
+
+[tool.setuptools.package-data]
+"q2t" = ["data/*.csv", "data/*.json"]

@@ -1,5 +1,5 @@
 ---
-name: qlik-to-thoughtspot
+name: ts-convert-from-qlik
 description: >-
   Migrate a Qlik Sense dashboard to ThoughtSpot WITHOUT Qlik API access — the
   manual / no-API path. Use when the user has a .qvf file plus a dashboard
@@ -16,10 +16,23 @@ description: >-
 This is the **fallback path** for when there's no Qlik API/engine access. It is
 faithful for the **data model** (read from the warehouse) but the **dashboard
 layer is inferred** from the PDF — so every inferred item is flagged, never
-silently guessed. For the foolproof path, use `qlik-to-thoughtspot-api`.
+silently guessed. For the foolproof path, use `ts-convert-from-qlik-api`.
 
-The engine is the `q2t` CLI in this repo. Run it from the repo root with the
-project venv active (`source .venv/bin/activate`).
+The engine is the `q2t` CLI (`pip install -e tools/q2t-cli` — see
+[agents/cli/SETUP.md](../SETUP.md)). All ThoughtSpot API calls go through `q2t`;
+never make inline `requests` calls from this skill.
+
+## References
+
+| File | Purpose |
+|---|---|
+| [../../shared/mappings/qlik/qlik-thoughtspot-formula-translation.md](../../shared/mappings/qlik/qlik-thoughtspot-formula-translation.md) | Qlik → ThoughtSpot formula translation (199-row map). Consult before declaring any expression untranslatable. |
+| [../../shared/schemas/thoughtspot-tml-invariants.md](../../shared/schemas/thoughtspot-tml-invariants.md) | TML rules the cluster enforces on import (table / model / liveboard) |
+| [../../shared/schemas/qlik-app-ir.md](../../shared/schemas/qlik-app-ir.md) | The IR contract between extract and transform |
+| [references/coverage-matrix.md](references/coverage-matrix.md) | What this skill maps and what it does not |
+| [references/open-items.md](references/open-items.md) | Known gaps and deferred capabilities |
+| [references/migration-report-format.md](references/migration-report-format.md) | Required migration-report format (final deliverable) |
+| [references/migration-report.example.md](references/migration-report.example.md) | A worked example of the report |
 
 ## Step 1 — Ask the user for these inputs
 
@@ -39,7 +52,7 @@ Ask for (and wait for) all of the following before doing anything:
 ## Step 2 — Extract what the binary will give (expect little)
 
 ```bash
-python -m q2t extract --qvf "<path>" --out build/app.ir.json --mode offline
+q2t extract --qvf "<path>" --out build/app.ir.json --mode offline
 ```
 
 `.qvf` is proprietary binary; offline recovers only fragments (it will report
@@ -70,10 +83,10 @@ user rather than guessing.
 Assemble the IR (tables + joins + measures + sheets/charts), then:
 
 ```bash
-python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
+q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
 # review build/report.md, ensure the connection exists on the cluster, then:
-python -m q2t load --tml build/tml/ --host <TS_HOST> --validate-only   # dry run
-python -m q2t load --tml build/tml/ --host <TS_HOST> --import-policy ALL_OR_NONE
+q2t load --tml build/tml/ --host <TS_HOST> --validate-only   # dry run
+q2t load --tml build/tml/ --host <TS_HOST> --import-policy ALL_OR_NONE
 ```
 
 Use TML invariants the cluster enforces: model joins in `model_tables[].joins`;
@@ -88,7 +101,7 @@ Confirm each viz renders (live `searchdata` / `liveboard/sql`), then **always
 generate the migration report** — this is a required final deliverable of every
 migration, not optional. Write it to `migration_report.md` and hand it to the user.
 
-`python -m q2t report ...` can emit a starting inventory, but the deliverable must
+`q2t report ...` can emit a starting inventory, but the deliverable must
 follow the **full report format** below (see the template at
 `references/migration-report-format.md`). Fill every section from the actual
 migration; do not omit sections.
@@ -130,3 +143,11 @@ one of these statuses. Provenance stays **data model = SOURCE, charts = INFERRED
 - **Never silently drop** anything — unmapped constructs go in the report.
 - **Surface, recommend, resolve** ambiguous items with the user.
 - **Validate before importing.** Treat credentials as sensitive; never commit them.
+
+---
+
+## Changelog
+
+| Version | Date | Summary |
+|---|---|---|
+| 1.0.0 | 2026-07-21 | Initial release under `agents/cli/` — no-API / manual Qlik → ThoughtSpot migration path (renamed from `qlik-to-thoughtspot`; engine invoked via the installed `q2t` CLI). |

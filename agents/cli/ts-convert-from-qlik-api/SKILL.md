@@ -1,5 +1,5 @@
 ---
-name: qlik-to-thoughtspot-api
+name: ts-convert-from-qlik-api
 description: >-
   Migrate a Qlik Sense app to ThoughtSpot using the QLIK CLOUD API — the
   foolproof, low-guesswork path. Use when the user HAS Qlik Cloud access: a
@@ -18,7 +18,23 @@ extraction is exact (SOURCE provenance) — no PDF, minimal guesswork. The only
 judgment left is the ThoughtSpot translation (expression → formula, chart-type
 fallbacks), which the formula map + report flag rather than guess.
 
-Engine is the `q2t` CLI in this repo (run from repo root, venv active).
+For the no-API / manual path (PDF + data model), use `ts-convert-from-qlik`.
+
+The engine is the `q2t` CLI (`pip install -e "tools/q2t-cli[engine]"` — the
+`engine` extra adds `websocket-client` for the Qlik Engine API; see
+[agents/cli/SETUP.md](../SETUP.md)). All ThoughtSpot API calls go through `q2t`;
+never make inline `requests` calls from this skill.
+
+## References
+
+| File | Purpose |
+|---|---|
+| [../../shared/mappings/qlik/qlik-thoughtspot-formula-translation.md](../../shared/mappings/qlik/qlik-thoughtspot-formula-translation.md) | Qlik → ThoughtSpot formula translation (199-row map). Consult before declaring any expression untranslatable. |
+| [../../shared/schemas/thoughtspot-tml-invariants.md](../../shared/schemas/thoughtspot-tml-invariants.md) | TML rules the cluster enforces on import (table / model / liveboard) |
+| [../../shared/schemas/qlik-app-ir.md](../../shared/schemas/qlik-app-ir.md) | The IR contract between extract and transform |
+| [references/coverage-matrix.md](references/coverage-matrix.md) | What this skill maps and what it does not |
+| [references/open-items.md](references/open-items.md) | Known gaps and deferred capabilities |
+| [../ts-convert-from-qlik/references/migration-report-format.md](../ts-convert-from-qlik/references/migration-report-format.md) | Required migration-report format (shared with the manual skill) |
 
 ## Step 1 — Ask the user for these inputs
 
@@ -37,7 +53,7 @@ Engine is the `q2t` CLI in this repo (run from repo root, venv active).
 
 ```bash
 export QLIK_API_KEY=<key>
-python -m q2t extract --mode qlik-cloud \
+q2t extract --mode qlik-cloud \
   --tenant "https://<tenant>.<region>.qlikcloud.com" \
   --app-id "<app-guid-or-name>" \
   --out build/app.ir.json
@@ -60,9 +76,9 @@ mismatches). Use `q2t.transform.wh_types.fetch_snowflake_types` to build a
 ## Step 4 — Transform → validate → import
 
 ```bash
-python -m q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
-python -m q2t load --tml build/tml/ --host <TS_HOST> --validate-only
-python -m q2t load --tml build/tml/ --host <TS_HOST> --import-policy ALL_OR_NONE
+q2t transform --ir build/app.ir.json --out build/tml/ --report build/report.md
+q2t load --tml build/tml/ --host <TS_HOST> --validate-only
+q2t load --tml build/tml/ --host <TS_HOST> --import-policy ALL_OR_NONE
 ```
 
 Same TML invariants as the manual skill (model joins, `[Table::COLUMN]`
@@ -74,7 +90,7 @@ aggregated output column names verified via `searchdata`).
 Confirm each viz renders, then **generate the migration report**:
 
 ```bash
-python -m q2t report --tml build/tml/ --out build/migration_report.md \
+q2t report --tml build/tml/ --out build/migration_report.md \
     --provenance api --app-name "<app>" \
     --target "<host> / <connection> / <db>.<schema>"
 ```
@@ -88,6 +104,15 @@ types) and import failures, not inference.
 ## Prerequisites & notes
 
 - Requires Qlik Cloud API access; **trial tenants often cannot generate API
-  keys** (no Developer role) — if so, fall back to `qlik-to-thoughtspot`.
-- `pip install -r requirements.txt` (needs `websocket-client` for the Engine API).
+  keys** (no Developer role) — if so, fall back to `ts-convert-from-qlik`.
+- `pip install -e "tools/q2t-cli[engine]"` (the `engine` extra pulls
+  `websocket-client` for the Qlik Engine API).
 - Never commit the API key or ThoughtSpot credentials.
+
+---
+
+## Changelog
+
+| Version | Date | Summary |
+|---|---|---|
+| 1.0.0 | 2026-07-21 | Initial release under `agents/cli/` — Qlik Cloud API (SOURCE-provenance) migration path (renamed from `qlik-to-thoughtspot-api`; engine invoked via the installed `q2t` CLI). |

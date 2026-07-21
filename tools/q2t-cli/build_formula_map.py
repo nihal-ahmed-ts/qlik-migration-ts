@@ -9,11 +9,23 @@ Corrections applied (verified against docs):
 
 Flagged "verify" (could NOT confirm against the truncated docs page):
   * S12 strpos, N09 exp, D27 date_trunc
-"""
-import csv, json, os, re
 
-SRC = "/Users/nihal.ahmed/Downloads/complete-qlik-sense-thoughtspot-formula-mapping-199-formulas-.csv"
-OUT_DIR = "q2t/data"
+Usage:
+    python build_formula_map.py [SOURCE_CSV]
+
+SOURCE_CSV defaults to the currently-packaged map (re-running is idempotent —
+the corrections below are already applied). Pass a fresh export to re-ingest.
+"""
+import csv, json, os, re, sys
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+OUT_DIR = os.path.join(_HERE, "q2t", "data")
+# Default source is the packaged CSV; override with argv[1] or Q2T_FORMULA_CSV.
+SRC = (
+    sys.argv[1] if len(sys.argv) > 1
+    else os.environ.get("Q2T_FORMULA_CSV")
+    or os.path.join(OUT_DIR, "qlik_ts_formula_map.csv")
+)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 TS_EQUIV = "ThoughtSpot Equivalent"
