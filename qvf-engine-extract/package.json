@@ -7,7 +7,7 @@
     "extract": "node src/extract.js"
   },
   "dependencies": {
-    "enigma.js": "^2.14.0",
+    "enigma.js": "^2.15.0",
     "ws": "^8.18.0"
   }
 }
